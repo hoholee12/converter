@@ -29,6 +29,9 @@ until [[ "$1" != --debug ]] && [[ "$1" != --verbose ]] && [[ "$1" != --supass ]]
 			break
 		fi
 		readonly install=1
+		shift
+		save_args=$@
+		break
 	elif [[ "$1" == --supass ]] && [[ "$run_as_root" != 0 ]]; then
 		readonly run_as_root=0
 	elif [[ "$1" == --bbpass ]] && [[ "$run_bb_apg_2" != 0 ]]; then
@@ -400,11 +403,8 @@ cmd4=grep
 cmd5=head
 cmd6=awk
 cmd7=cat
-cmd8=pgrep
-cmd9=ps
-cmd10=cp
-cmd11=cut
-cmd12=ffmpeg
+cmd8=cut
+cmd9=ffmpeg
 cmd= # It notifies the generator how many cmds are available for check. Leave it as blank.
 
 silent_mode= # enabling this will hide errors.
@@ -586,7 +586,7 @@ Roll_Down(){
 		exit $return
 	fi
 	if [[ "$install" == 1 ]]; then
-		install
+		install $save_args
 		return=$?
 		exit $return
 	fi
