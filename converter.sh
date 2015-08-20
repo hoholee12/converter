@@ -622,4 +622,8 @@ for i in *.mp4; do
 	rm "${i}"
 done
 
+for i in *.m4a; do
+	ffmpeg -i "${i}" -codec:a libmp3lame "${i%.m4a}.mp3"
+done
+
 exit 0 #EOF
