@@ -13,7 +13,7 @@ install=0
 # launch debug_shell() at start.
 debug=0
 # Bourne-again Shell only.
-bash_only=1
+bash_only=
 until [[ "$1" != --debug ]] && [[ "$1" != --verbose ]] && [[ "$1" != --supass ]] && [[ "$1" != --bbpass ]] && [[ "$1" != --urand ]] && [[ "$1" != --invrand ]] && [[ "$1" != --renice ]] && [[ "$1" != --install ]]; do
 	if [[ "$1" == --debug ]]; then
 		if [[ "$install" == 1 ]]; then
@@ -275,10 +275,12 @@ install(){
 	mountstat=$(mount | grep $loc_DIR_NAME | head -n1)
 	availperm=$(echo $mountstat | grep 'ro\|rw')
 	if [[ "$availperm" ]]; then #linux else unix
-		if [[ "$(echo $mountstat | grep ro)" ]]; then
+		if [[ "$(echo $availperm | grep ro)" ]]; then
 			ro=1
 			echo -n -e '\rmounting...'
 			mount -o remount,rw $loc_DIR_NAME
+		else
+			ro=0
 		fi
 	else
 		ro=0
@@ -304,31 +306,20 @@ install(){
 			esac
 		done
 	fi
-	if [[ "$(echo $mountstat | grep rw)" ]]; then
-		echo -n -e '\rcopying files...'
+	echo -n -e '\rcopying files...'
+	if [[ "$DIR_NAME" == NULL ]]; then
 		cp $0 $loc/$NO_EXTENSION
-		if [[ "$?" != 0 ]]; then
-			return 1
-		fi
-		chmod 755 $loc/$NO_EXTENSION
-		if [[ "$ro" == 1 ]]; then
-			mount -o remount,ro $loc_DIR_NAME
-		fi
 	else
-		if [[ ! "$availperm" ]]; then
-			echo -n -e '\rcopying files...'
-			cp $0 $loc/$NO_EXTENSION
-			if [[ "$?" != 0 ]]; then
-				return 1
-			fi
-			chmod 755 $loc/$NO_EXTENSION
-		else
-			error=1
-		fi
+		cp $FULL_NAME $loc/$NO_EXTENSION
+	fi
+	error=$?
+	chmod 755 $loc/$NO_EXTENSION
+	if [[ "$ro" == 1 ]]; then
+		mount -o remount,ro $loc_DIR_NAME
 	fi
 	unset loc
-	if [[ "$error" == 1 ]]; then
-		echo -e "internal error! please use '--verbose' and try again. \e[1;31m\"error code 1\"\e[0m"
+	if [[ "$error" != 0 ]]; then
+		echo -e "internal error! please use '--verbose' and try again. \e[1;31m\"error code $error\"\e[0m"
 		return 1
 	else
 		echo
@@ -338,24 +329,34 @@ install(){
 	fi
 }
 long_line(){
+	if [[ "$1" -gt 1 ]]; then
+		echo -n -e '\e[3m'
+	fi
 	for i in $(seq 1 $(stty size | awk '{print $2}' 2>/dev/null)); do
 		if [[ "$1" -le 1 ]]; then
-			echo -n '-'
+			echo -n '_'
 		else
-			echo -n '='
+			echo -n ' '
 		fi
 	done
 	if [[ "$i" == 1 ]]; then
 		echo -n -e '\r'
 		for j in $(seq 1 80); do # 80 columns
 			if [[ "$1" -le 1 ]]; then
-				echo -n '-'
+				echo -n '_'
 			else
-				echo -n '='
+				echo -n ' '
 			fi
 		done
 	fi
-	echo
+	echo -e '\e[0m'
+}
+part_line(){
+	count=$(echo $@ | wc -c)
+	for i in $(seq 1 $(($(stty size | awk '{print $2}' 2>/dev/null)-count))); do
+		echo -n '_'
+	done
+	echo $@
 }
 error(){
 	message=$@
@@ -382,7 +383,7 @@ error(){
 	fi
 }
 
-# mp4 to m4a converter
+# mp4 to m4a to mp3 converter
 #
 # Copyright (C) 2013-2015  hoholee12@naver.com
 #
@@ -404,7 +405,6 @@ cmd5=head
 cmd6=awk
 cmd7=cat
 cmd8=cut
-cmd9=ffmpeg
 cmd= # It notifies the generator how many cmds are available for check. Leave it as blank.
 
 silent_mode= # enabling this will hide errors.
@@ -567,7 +567,7 @@ bash_only(){
 		bashloc=$(which bash)
 		if [[ "$bashloc" ]]; then
 			$bashloc $FULL_NAME $@
-			exit 0
+			exit $?
 		fi
 		bash_check=1
 		error Please re-run this program with BASH. \"error code 1\" #to pass the double-quote character to the error function, you must use the inverted-slash character.
@@ -580,18 +580,6 @@ Roll_Down(){
 	local return
 	
 	#first run
-	if [[ "$debug" == 1 ]]; then
-		debug_shell
-		return=$?
-		exit $return
-	fi
-	if [[ "$install" == 1 ]]; then
-		install $save_args
-		return=$?
-		exit $return
-	fi
-	
-	#second run
 	if [[ "$run_bb_apg_2" == 1 ]]; then
 		bb_apg_2
 		return=$?
@@ -612,6 +600,18 @@ Roll_Down(){
 		if [[ "$return" -ne 0 ]]; then
 			exit $return
 		fi
+	fi
+	
+	#second run
+	if [[ "$debug" == 1 ]]; then
+		debug_shell
+		return=$?
+		exit $return
+	fi
+	if [[ "$install" == 1 ]]; then
+		install $save_args
+		return=$?
+		exit $return
 	fi
 }
 Roll_Down $@
