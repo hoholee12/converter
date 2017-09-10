@@ -623,7 +623,7 @@ for i in *.mp4; do
 done
 
 for i in *.m4a; do
-	ffmpeg -i "${i}" -codec:a libmp3lame "${i%.m4a}.mp3"
+	ffmpeg -i "${i}" -c:a libmp3lame -ab 320k "${i%.m4a}.mp3"
 done
 
 exit 0 #EOF
