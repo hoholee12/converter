@@ -619,7 +619,6 @@ Roll_Down $@
 # Your main script here.
 for i in *.mp4; do
 	ffmpeg -i "${i}" -map 0:1 -c:a copy "${i%.mp4}.m4a"
-	rm "${i}"
 done
 
 for i in *.m4a; do
