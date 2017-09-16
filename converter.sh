@@ -617,12 +617,14 @@ Roll_Down(){
 Roll_Down $@
 
 # Your main script here.
-for i in *.mp4; do
-	ffmpeg -i "${i}" -map 0:1 -c:a copy "${i%.mp4}.m4a"
+IFS=$'\n'
+for i in $(ls | grep -e 'mp4\|m4a'); do
+	if [[ "$(echo $i | grep 'mp4')" ]]; then
+		ffmpeg -i "${i}" -map 0:1 -c:a copy "${i%.mp4}.m4a"
+	elif [[ "$(echo $i | grep 'm4a')" ]]; then
+		ffmpeg -i "${i}" -c:a libmp3lame -ab 320k "${i%.m4a}.mp3"
+	fi
 done
-
-for i in *.m4a; do
-	ffmpeg -i "${i}" -c:a libmp3lame -ab 320k "${i%.m4a}.mp3"
-done
+unset IFS
 
 exit 0 #EOF
